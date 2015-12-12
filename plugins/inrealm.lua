@@ -343,24 +343,21 @@ chat_info(receiver, returnids, {receiver=receiver})
 	end
 
 
-    if not is_realm(msg) then
-		return
-	end
     local data = load_data(_config.moderation.data)
     local receiver = get_receiver(msg)
 	if matches[2] then if data[tostring(matches[2])] then
 		local settings = data[tostring(matches[2])]['settings']
-		if matches[1] == 'setabout' and matches[2] then
+		if matches[1] == 'setabout' and matches[2] and is_realm(msg) then
 			local target = matches[2]
 		    local about = matches[3]
 		    return set_description(msg, data, target, about)
 		end
-		if matches[1] == 'setrules' then
+		if matches[1] == 'setrules' and is_realm(msg) then
 		    rules = matches[3]
 			local target = matches[2]
 		    return set_rules(msg, data, target)
 		end
-		if matches[1] == 'lock' then --group lock *
+		if matches[1] == 'lock' and is_realm(msg) then --group lock *
 			local target = matches[2]
 		    if matches[3] == 'name' then
 		        return lock_group_name(msg, data, target)
@@ -375,7 +372,7 @@ chat_info(receiver, returnids, {receiver=receiver})
 		        return lock_group_flood(msg, data, target)
 		    end
 		end
-		if matches[1] == 'unlock' then --group unlock *
+		if matches[1] == 'unlock' and is_realm(msg) then --group unlock *
 			local target = matches[2]
 		    if matches[3] == 'name' then
 		        return unlock_group_name(msg, data, target)
@@ -390,11 +387,11 @@ chat_info(receiver, returnids, {receiver=receiver})
 		        return unlock_group_flood(msg, data, target)
 		    end
 		end
-		if matches[1] == 'setting' and data[tostring(matches[2])]['settings'] then
+		if matches[1] == 'setting' and data[tostring(matches[2])]['settings'] and is_realm(msg) then
 			local target = matches[2]
 		    return show_group_settings(msg, data, target)
 		end
-		if matches[1] == 'setname' and is_admin(msg) then
+		if matches[1] == 'setname' and is_admin(msg) and is_realm(msg) then
 		    local new_name = string.gsub(matches[3], '_', ' ')
 		    data[tostring(matches[2])]['settings']['set_name'] = new_name
 		    save_data(_config.moderation.data, data)
@@ -404,7 +401,7 @@ chat_info(receiver, returnids, {receiver=receiver})
 		end
 
 	end end
-		if matches[1] == 'chat_add_user' then
+		if matches[1] == 'chat_add_user' and is_realm(msg) then
 		    if not msg.service then
 		        return "Are you trying to troll me?"
 		    end
@@ -414,7 +411,7 @@ chat_info(receiver, returnids, {receiver=receiver})
 				chat_del_user(chat, user, ok_cb, true)
 			end
 		end
-		if matches[1] == 'addadmin' then
+		if matches[1] == 'addadmin' and is_realm(msg) then
 			if string.match(matches[2], '^%d+$') then
 				local admin_id = matches[2]
 				print("user "..admin_id.." has been promoted as admin")
@@ -425,7 +422,7 @@ chat_info(receiver, returnids, {receiver=receiver})
 				chat_info(receiver, username_id, {mod_cmd= mod_cmd, receiver=receiver, member=member})
 			end
 		end
-		if matches[1] == 'removeadmin' then
+		if matches[1] == 'removeadmin' and is_realm(msg) then
 			if string.match(matches[2], '^%d+$') then
 				local admin_id = matches[2]
 				print("user "..admin_id.." has been demoted")
@@ -436,13 +433,16 @@ chat_info(receiver, returnids, {receiver=receiver})
 				chat_info(receiver, username_id, {mod_cmd= mod_cmd, receiver=receiver, member=member})
 			end
 		end
-		if matches[1] == 'list' and matches[2] == 'admins' then
+		if matches[1] == 'list' and matches[2] == 'admins' and is_realm(msg) then
 			return admin_list(msg)
 		end
-		if matches[1] == 'list' and matches[2] == 'groups' then
-			group_list(msg)
-		 send_document("chat#id"..msg.to.id, "groups.txt", ok_cb, false)	
-			return " Group list created" --group_list(msg)
+		if matches[1] == 'list' and matches[2] == 'groups' and is_realm(msg) then
+		   group_list(msg)
+		   send_document("chat#id"..msg.to.id, "groups.txt", ok_cb, false)	
+		  return " Group list created" --group_list(msg)
+		elseif msg.to.type ~= 'chat' then
+		   send_document("user#id"..msg.from.id, "groups.txt", ok_cb, false)	
+		  return " Group list created" --group_list(msg)
 		end
 end
  
