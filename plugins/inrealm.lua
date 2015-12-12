@@ -439,10 +439,10 @@ chat_info(receiver, returnids, {receiver=receiver})
 		if matches[1] == 'list' and matches[2] == 'groups' and is_realm(msg) then
 		   group_list(msg)
 		   send_document("chat#id"..msg.to.id, "groups.txt", ok_cb, false)	
-		  return " Group list created" --group_list(msg)
+		  return --group_list(msg)
 		elseif msg.to.type ~= 'chat' then
 		   send_document("user#id"..msg.from.id, "groups.txt", ok_cb, false)	
-		  return " Group list created" --group_list(msg)
+		  return "use \"/join (id)\" to join one of this groups." --group_list(msg)
 		end
 end
  
