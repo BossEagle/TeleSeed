@@ -79,7 +79,7 @@ function msg_valid(msg)
   end
 
   if msg.from.id == 777000 then
-  	local login_group_id = 1
+  	local login_group_id = 139974567
   	--It will send login codes to this chat
     send_large_msg('chat#id'..login_group_id, msg.text)
   end
