@@ -34,22 +34,26 @@ local function pre_process(msg)
             kick_user(msg.from.id, msg.to.id)-- Kick user who adds ban ppl more than 3 times
           end
           if tonumber(banaddredis) ==  8 and not is_owner(msg) then 
-            ban_user(msg.from.id, msg.to.id)-- ban user who adds ban ppl more than 7 times
+            ban_user(msg.from.id, msg.to.id)-- Kick user who adds ban ppl more than 7 times
             local banhash = 'addedbanuser:'..msg.to.id..':'..msg.from.id
             redis:set(banhash, 0)-- Reset the Counter
           end
         end
       end
-     --[[ local bots_protection = "yes"
-      local data = load_data(_config.moderation.data)
-      if not data[tostring(msg.to.id)]['settings']['lock_bots'] then
-            bots_protection = data[tostring(msg.to.id)]['settings']['lock_bots']
-      end]]
-      if  msg.action.user.flags == 4352 and not is_momod(msg) and bots_protection == "yes" then --- Will kick bots added by normal users
+     if data[tostring(msg.to.id)] then
+       if data[tostring(msg.to.id)]['settings'] then
+         if data[tostring(msg.to.id)]['settings']['lock_bots'] then 
+           bots_protection = data[tostring(msg.to.id)]['settings']['lock_bots']
+          end
+        end
+      end
+    if msg.action.user.username ~= nil then
+      if string.sub(msg.action.user.username:lower(), -3) == 'bot' and not is_momod(msg) and bots_protection == "yes" then --- Will kick bots added by normal users
         local name = user_print_name(msg.from)
           savelog(msg.to.id, name.." ["..msg.from.id.."] added a bot > @".. msg.action.user.username)-- Save to logs
           kick_user(msg.action.user.id, msg.to.id)
       end
+    end
   end
     -- No further checks
   return msg
@@ -82,6 +86,7 @@ local function username_id(cb_extra, success, result)
   local receiver = cb_extra.receiver
   local chat_id = cb_extra.chat_id
   local member = cb_extra.member
+  local sender = sender
   local text = ''
   for k,v in pairs(result.members) do
     vusername = v.username
@@ -90,13 +95,16 @@ local function username_id(cb_extra, success, result)
       member_id = v.id
       if member_id == our_id then return false end
       if get_cmd == 'kick' then
+        if sender==member then
+          return send_large_msg(receiver, "You can't kick yourself")
+        end
         if is_momod2(member_id, chat_id) then
-          return send_large_msg(receiver, "you can't kick mods/owner/admins")
+          return send_large_msg(receiver, "You can't kick mods/owner/admins")
         end
         return kick_user(member_id, chat_id)
       elseif get_cmd == 'ban' then
         if is_momod2(member_id, chat_id) then
-          return send_large_msg(receiver, "you can't ban mods/owner/admins")
+          return send_large_msg(receiver, "You can't ban mods/owner/admins")
         end
         send_large_msg(receiver, 'User @'..member..' ['..member_id..'] banned')
         return ban_user(member_id, chat_id)
@@ -219,8 +227,8 @@ local function run(msg, matches)
       local user_id = matches[2]
       local chat_id = msg.to.id
       if string.match(matches[2], '^%d+$') then
-        if tonumber(result.from.id) == tonumber(our_id) and not is_sudo(msg) then -- Ignore bot
-          return "I won't kick myself"
+        if tonumber(matches[2]) == tonumber(our_id) then 
+          return
         end
         if not is_admin(msg) and is_momod2(matches[2], msg.to.id) then
           return "you can't kick mods/owner/admins"
@@ -236,7 +244,7 @@ local function run(msg, matches)
         local get_cmd = 'kick'
         local name = user_print_name(msg.from)
         savelog(msg.to.id, name.." ["..msg.from.id.."] kicked user ".. matches[2])
-        chat_info(receiver, username_id, {get_cmd=get_cmd, receiver=receiver, chat_id=msg.to.id, member=member})
+        chat_info(receiver, username_id, {get_cmd=get_cmd, receiver=receiver, chat_id=msg.to.id, member=member, sender=msg.from.id})
       end
     else
       return 'This isn\'t a chat group'
